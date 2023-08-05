@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import requests
+import tweepy
 from keys import google_key, cx
 
 # Assuming utils.py is inside the app folder
@@ -60,9 +61,11 @@ def get_search(id):
     try:
         # Query the database to get the search
         cursor = conn.cursor()
-        cursor.execute("SELECT search FROM tweets WHERE id=?", (id,))
+        cursor.execute("SELECT art_title, artist FROM tweets WHERE id=?", (id,))
         row_data = cursor.fetchone()
-        search = row_data[0]
+        art_title = row_data[0]
+        artist = row_data[1]
+        search = f"{art_title} by {artist}"
         return search
 
     except sqlite3.Error as e:
@@ -147,18 +150,13 @@ def create_and_post_tweet(client_v1, client_v2):
 
         attempt = 1
         search = get_search(tweet_id)
-        image_link = create_image_link(search, attempt)
-
 
         # Download the image from the image link
         while attempt <= max_attempts:
             try:
                 response = requests.get(image_link)
-                status_code = response.status_code
-            except requests.exceptions.InvalidSchema:
-                status_code = 404
+                response.raise_for_status()
 
-            if status_code == 200:
                 # Save the image to a local file (e.g., 'temp_image.jpg')
                 with open(TEMP_IMAGE_DIR, 'wb') as f:
                     f.write(response.content)
@@ -196,13 +194,23 @@ def create_and_post_tweet(client_v1, client_v2):
 
                 return           
         
-            else:
-                print(f"Failed to download the image. Attempt {attempt} out of {max_attempts}")
+            except Exception as e:
+                # Exception occurred while downloading image or uploading media
+                print(f"Error: {e}")
+                if os.path.exists(TEMP_IMAGE_DIR):
+                    os.remove(TEMP_IMAGE_DIR)  # Remove the invalid image file
+
+                print(f"Attempt {attempt} of 7 failed for Tweet Number: {tweet_counter} - Tweet ID: {tweet_id}, generating new image")
+
+                # Attempt to generate a new image link and continue with the next attempt
                 attempt += 1
-                # Create a new image link for the next attempt
                 image_link = create_image_link(search, attempt)
 
         else:
             print(f"Maximum attempts ({max_attempts}) reached for tweet {tweet_counter}.")
             tweet_counter += 1  # Move to the next tweet and attempt to post it
-            
+        
+            # Save the updated tweet counter to the file
+            with open(TWEET_COUNTER_FILE, "w") as counter_file:
+                counter_file.write(str(tweet_counter))
+
