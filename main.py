@@ -37,10 +37,3 @@ if __name__ == '__main__':
 
     # Start the scheduler
     scheduler.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
-        # Shut down the scheduler gracefully when the script is stopped
-        scheduler.shutdown()
