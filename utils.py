@@ -1,7 +1,6 @@
 import os
 import sqlite3
 import requests
-import tweepy
 from keys import google_key, cx
 
 # Assuming utils.py is inside the app folder
@@ -155,7 +154,12 @@ def create_and_post_tweet(client_v1, client_v2):
         # Download the image from the image link
         while attempt <= max_attempts:
             try:
-                response = requests.get(image_link)
+                if 'wiki' in image_link:
+                    headers = {'User-Agent': 'ArtBot ()'} # Add information Here, See https://meta.wikimedia.org/wiki/User-Agent_policy 
+                    response = requests.get(image_link, headers=headers)
+                else:
+                    response = requests.get(image_link)
+
                 response.raise_for_status()
 
                 # Save the image to a local file (e.g., 'temp_image.jpg')
@@ -214,3 +218,4 @@ def create_and_post_tweet(client_v1, client_v2):
             # Save the updated tweet counter to the file
             with open(TWEET_COUNTER_FILE, "w") as counter_file:
                 counter_file.write(str(tweet_counter))
+
