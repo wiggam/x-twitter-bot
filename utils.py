@@ -150,6 +150,7 @@ def create_and_post_tweet(client_v1, client_v2):
 
         attempt = 1
         search = get_search(tweet_id)
+        image_link = create_image_link(search, attempt)
 
         # Download the image from the image link
         while attempt <= max_attempts:
