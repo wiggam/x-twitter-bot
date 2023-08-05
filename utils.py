@@ -214,4 +214,3 @@ def create_and_post_tweet(client_v1, client_v2):
             # Save the updated tweet counter to the file
             with open(TWEET_COUNTER_FILE, "w") as counter_file:
                 counter_file.write(str(tweet_counter))
-
